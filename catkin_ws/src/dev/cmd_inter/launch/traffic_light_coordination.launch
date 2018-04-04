@@ -1,0 +1,36 @@
+<launch>
+	<arg name="veh" default="$(env VEHICLE_NAME)"/>
+	<!-- start basic args -->
+	<remap from="/duckiebot/camera_node/image/compressed" to="/duckiebot/camera1/image_raw/compressed" />
+	<remap from="/duckiebot/camera_node/image/raw" to="/duckiebot/camera1/image_raw" />
+	<remap from="/duckiebot/camera_node/camera_info" to="/duckiebot/camera1/camera_info"/>
+	<include file="$(find cmd_inter)/launch/master.launch">
+    <arg name="joystick" value="true" />
+	<arg name="wheels" value="false"/>
+	<arg name="veh" value="$(arg veh)"/>
+	<arg name="camera" value="true"/>
+	<arg name="LED" default="true" /> 
+	<arg name="/LED/emitter" value="false"/>
+	<arg name="/LED/detector" default="true" />
+	<arg name="/LED/interpreter" default="true" />
+	<arg name="visualization" value="false" />
+	<arg name="navigation" value="true"/>
+
+    <arg name="/navigation/intersection_control" value="true"/>
+	<arg name="/navigation/apriltags_random" value="true"/>
+    <arg name="/navigation/random_sr_turns" value="false"/>
+	<arg name="/navigation/graph_planner" default="false"/>
+
+	<arg name="apriltags" value="false" />
+	<arg name="/camera/raw" value="false"/>
+	<arg name="/camera/raw/rect" value="false"/>
+	<arg name="param_file_name" default="default" />
+	<arg name="line_detector_param_file_name" default="default" />
+   	<arg name="anti_instagram" default="true" />
+    
+    <arg name="intersectionType" default="trafficLight" /> 
+    <arg name="coordination" default="true" />     
+	</include><node pkg="cmd_inter" name="cmd_inter_node" type="cmd_inter_node.py" output="screen">
+		<!--<remap from="/turtle1/cmd_vel" to="/cmd_vel"/>-->
+	</node>
+</launch>

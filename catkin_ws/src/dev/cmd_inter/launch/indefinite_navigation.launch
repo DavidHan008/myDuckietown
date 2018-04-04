@@ -1,0 +1,26 @@
+<launch>
+	<arg name="veh" default="$(env VEHICLE_NAME)"/>
+	<!-- start basic args -->
+	<remap from="/duckiebot/camera_node/image/compressed" to="/duckiebot/camera1/image_raw/compressed" />
+	<remap from="/duckiebot/camera_node/image/raw" to="/duckiebot/camera1/image_raw" />
+	<remap from="/duckiebot/camera_node/camera_info" to="/duckiebot/camera1/camera_info"/>
+	<include file="$(find cmd_inter)/launch/master.launch">
+		<arg name="veh" value="$(arg veh)"/>
+		<arg name="wheels" value="false"/>
+		<arg name="camera" value="true"/>
+		<arg name="/LED/emitter" value="false"/>
+		<arg name="visualization" value="true" />
+		<arg name="navigation" value="true"/>
+		<arg name="/navigation/random_sr_turns" value="true"/>
+		<arg name="apriltags" value="false" />
+		<arg name="/camera/raw" value="true"/>
+		<arg name="/camera/raw/rect" value="false"/>
+		<arg name="param_file_name" default="default" />
+		<arg name="line_detector_param_file_name" default="default" />
+		<arg name="anti_instagram" default="false" />
+		<arg name="coordination" value="false"/>
+	</include>
+	<node pkg="cmd_inter" name="cmd_inter_node" type="cmd_inter_node.py" output="screen">
+		<!--<remap from="/turtle1/cmd_vel" to="/cmd_vel"/>-->
+	</node>
+</launch>

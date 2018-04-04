@@ -1,0 +1,67 @@
+cd duckietown_demos
+
+source set_vhe
+roslaunch duckietown_demos lane_following.launch veh:=duckiebot0 verbose:=true line_detector_param_file_name:=default
+
+roslaunch duckietown_demos lane_following.launch veh:=duckiebot0 line_detector_param_file_name:=bad_lighting verbose:=true 
+
+roslaunch duckietown_demos lane_following.launch veh:=duckiebot0 line_detector_param_file_name:=universal verbose:=true 
+
+roslaunch duckietown_demos lane_following.launch veh:=duckiebot0 verbose:=true line_detector_param_file_name:=default /lane_following/stop_line_filter:=true
+
+roslaunch duckietown_demos obstacle_avoid.launch veh:=duckiebot0 
+
+roslaunch duckietown_demos obstacle_vehicle_avoid.launch veh:=duckiebot0 
+
+button[0]
+
+roslaunch duckietown_demos obstacle_avoid_nowheels.launch veh:=duckiebot0 
+
+cv2.findContours() unpack error : add a variable
+cv2.SimpleBlobDetector error: change to cv2.SimpleBlobDetector_create
+  vehicle_detecrtion/src/vehicle_detection_node.py
+
+roscd ground_projection
+cd src
+vim ground_projection_node.py
+line 65
+return ....(vector2ground)
+
+roslaunch duckietown_demos lane_following.launch veh:=duckiebot0  /lane_following/stop_line_filter:=true coordination:=true
+
+roslaunch duckietown_demos traffic_light_coordination.launch veh:=duckiebot0 
+
+intersection_done:
+    topic: "open_loop_intersection_control_node/intersection_done"
+    msg_type: "BoolStamped"
+    trigger: True
+
+  COORDINATION:
+    transitions:
+      intersection_go: "INTERSECTION_CONTROL"
+    active_nodes:
+      - apriltag_node
+      - led_detector_node
+      - led_emitter_node
+      - decoder_node
+      - framerate_high
+    lights: ["coordination"]
+  INTERSECTION_CONTROL:
+    transitions:
+      intersection_done: "LANE_FOLLOWING"
+    active_nodes:
+      - line_detector_node
+      - lane_filter_node
+      - apriltag_node
+      - decoder_node
+      - led_emitter_node
+
+LED_interpreter_node.py line6 delete AprilTags
+
+trafficLight demo
+remote:
+roslaunch duckietown_demos traffic_light_coordination.launch veh:=duckiebot0
+local:
+roslaunch led_detection LED_detection_local.launch veh:=duckiebot0 local:=true
+roslaunch led_detection LED_detection_visualizer.launch veh:=duckiebot0 local:=true
+roslaunch led_interpreter LED_interpreter_local.launch veh:=duckiebot0 local:=true

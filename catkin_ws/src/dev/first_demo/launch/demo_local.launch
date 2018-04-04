@@ -1,0 +1,100 @@
+<launch>
+	<include file="$(find duckietown)/machines"/>
+	<arg name="pkg_name" value="led_detection"/>
+	<arg name="veh" default="duckiebot0" doc="Name of vehicle. ex: megaman"/>
+	<arg name="local" default="false" doc="true for running on laptop. false for running on vehicle."/>
+	<arg name="config" default="baseline" doc="Specify a config."/>
+	<arg name="param_file_name" default="default" doc="Specify a param file. ex:megaman"/>
+	<arg name="node_name" default="LED_detector_node"/>
+	<arg name="continuous" default="True"/> <!-- manual trigger required if false [interactive mode] -->
+    <arg name="protocol_file" default="LED_protocol"/>
+    <arg name="location_config" default="location_config"/>
+	<arg name="detect" default="true"/>
+	<arg name="fsm" default="true"/>
+	<arg name="fsm_file_name" default="default" />
+	<arg name="LED" default="false"/>
+	<arg name="coordination" value="false"/>
+    
+	<group if="$(arg LED)">
+		<!-- Run detector on remote (vehicle) -->
+		<node ns="$(arg veh)" pkg="$(arg pkg_name)" type="LED_detector_node.py" name="LED_detector_node" output="screen" clear_params="true" required="true">
+			<rosparam command="load" file="$(find duckietown)/config/$(arg config)/led_interpreter/LED_protocol.yaml"/>
+			<rosparam command="load" file="$(find duckietown)/config/$(arg config)/$(arg pkg_name)/$(arg node_name)/$(arg param_file_name).yaml"/>
+			<param name="continuous" type="bool" value="$(arg continuous)" />
+		</node>	
+	</group>
+
+		<node ns="$(arg veh)" pkg="led_interpreter" type="LED_interpreter_node.py" name="LED_interpreter_node" output="screen" required="true">
+				<rosparam command="load" file="$(find duckietown)/config/$(arg config)/led_interpreter/$(arg protocol_file).yaml"/>
+				<rosparam command="load" file="$(find duckietown)/config/$(arg config)/led_interpreter/$(arg location_config).yaml"/>
+				<param name="intersectionType" value="trafficLight"/>
+		</node>
+
+
+    <node ns="duckiebot0" name="new_joy_mapper_node" pkg="joy_mapper_dev" type="new_joy_mapper_node.py" output="screen">
+                <!-- Setup parameters -->
+
+                <!-- Remapping topics -->
+
+                <!-- <remap from="~topic_b" to="talker/topic_a"/> -->
+    </node>
+    
+	<group if="$(arg coordination)">
+	<remap from="simple_coordinator_node/mode" to="fsm_node/mode" />
+	<remap from="simple_coordinator_node/signals_detection" to="LED_interpreter_node/signals_detection" />
+	<!--the following remap is done through led_patter_switch_node -->
+	<!--remap from="simple_coordinator_node/change_color_pattern" to="led_emitter_node/change_color_pattern" /-->
+	<include file="$(find veh_coordinator)/launch/simple_coordinator_node_local.launch">
+		<arg name="veh" value="$(arg veh)"/>        
+		<arg name="config" value="$(arg config)"/>        
+		<arg name="param_file_name" value="$(arg param_file_name)"/>    
+		<arg name="intersectionType" value="trafficLight" />    
+	</include>
+    </group>
+
+    <group if="$(arg detect)">
+		<node ns="$(arg veh)" name="ssd_node" pkg="ssd" type="ssd_node.py" output="screen">
+			<!-- Setup parameters -->
+			<param name="~pub_timestep" value="0.2"/>
+			<!-- Remapping topics -->
+			<!-- <remap from="~topic_b" to="~topic_a"/> -->
+			<!-- <remap from="~topic_b" to="ssd_node/topic_a"/> -->
+		</node>
+	</group>
+    
+	<!-- Start FSM -->
+	<group if="$(arg fsm)">
+		<!-- FSM -->
+		<!-- no remapping for FSM - full topic names specified in params yaml -->
+		<include file="$(find fsm)/launch/fsm_node.launch">
+			<arg name="veh" value="$(arg veh)"/> 
+			<arg name="local" value="true"/>       
+			<arg name="config" value="$(arg config)"/>        
+			<arg name="param_file_name" value="$(arg fsm_file_name)"/>        
+		</include>
+
+		<!-- car_cmd_switch_node -->
+		<!-- no remappings for car_cmd_switch - full topic names specified in params yaml -->
+		<remap from="car_cmd_switch_node/cmd_lane_following" to="lane_controller_node/lane_control"/> 
+		<!-- need either lots more of these or none of these -->
+		<include file="$(find dagu_car)/launch/car_cmd_switch_node.launch">
+			<arg name="veh" value="$(arg veh)"/>
+			<arg name="local" value="true"/>
+			<arg name="config" value="$(arg config)"/>
+			<arg name="param_file_name" value="$(arg param_file_name)"/>
+		</include>
+
+		<include file="$(find fsm)/launch/logic_gate_node.launch">
+			<arg name="veh" value="$(arg veh)"/>
+			<arg name="local" value="true"/>
+			<arg name="config" value="$(arg config)"/>
+			<arg name="param_file_name" value="$(arg param_file_name)"/>
+		</include>
+	</group>
+
+	<!-- lane controller -->
+	<node ns="$(arg veh)" pkg="lane_pid" type="lane_pid_node.py" name="lane_controller_node" output="screen" clear_params="true" required="true">
+		<rosparam command="load" file="$(find duckietown)/config/$(arg config)/lane_pid/lane_pid_node/$(arg param_file_name).yaml"/>
+		<remap from="/$(arg veh)/lane_controller_node/lane_pose" to="/duckiebot0/lane_filter_node/lane_pose"/>
+	</node>
+</launch>
